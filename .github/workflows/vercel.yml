@@ -1,35 +1,42 @@
-name: Auto Update & Generate Vercel Config
+name: Build & Generate Vercel Config
 
 on:
+  push:
+    branches: [main]         # 推送到 main 分支时触发
   schedule:
-    - cron: '0 3 * * *'  # 每天凌晨3点自动运行
-  workflow_dispatch:     # 允许手动触发
+    - cron: '0 3 * * *'      # 每天凌晨 3 点自动运行
+  workflow_dispatch:         # 允许手动触发
 
 jobs:
-  update-and-generate:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
+    - name: Setup Node.js with Corepack
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
 
-    - name: Install dependencies
+    - name: Enable and activate pnpm
       run: |
         corepack enable
-        pnpm install
+        corepack prepare pnpm@8.9.2 --activate
+
+    - name: Verify pnpm installation
+      run: pnpm --version
+
+    - name: Install dependencies
+      run: pnpm install
 
     - name: Build project
       run: pnpm bundle:esbuild
 
-    - name: Generate Vercel config
+    - name: Generate vercel.json
       run: |
-        mkdir -p vercel
         echo '{
           "version": 2,
           "builds": [
@@ -38,14 +45,14 @@ jobs:
           "routes": [
             { "src": "/(.*)", "dest": "/backend/index.js" }
           ]
-        }' > vercel/vercel.json
+        }' > vercel.json
 
-    - name: Commit and push changes
+    - name: Commit vercel.json
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add vercel/vercel.json
-        git commit -m "chore: auto-generate vercel config"
+        git add vercel.json
+        git commit -m "chore: update vercel config"
         git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
