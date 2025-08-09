@@ -2,10 +2,10 @@ name: Build & Generate Vercel Config
 
 on:
   push:
-    branches: [main]         # 推送到 main 分支时触发
+    branches: [main]
   schedule:
-    - cron: '0 3 * * *'      # 每天凌晨 3 点自动运行
-  workflow_dispatch:         # 允许手动触发
+    - cron: '0 3 * * *'
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -15,16 +15,16 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Node.js with Corepack
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
 
-    - name: Enable and activate pnpm
+    - name: Install pnpm
       run: |
-        corepack enable
-        corepack prepare pnpm@8.9.2 --activate
+        curl -fsSL https://get.pnpm.io/install.sh | sh -
+        echo "export PATH=$HOME/.local/share/pnpm:$PATH" >> $GITHUB_ENV
 
     - name: Verify pnpm installation
       run: pnpm --version
